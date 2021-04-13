@@ -2,6 +2,8 @@ import re
 import requests
 import unidecode, unicodedata
 import pandas as pd
+import matplotlib.pyplot as plt
+
 from bs4 import BeautifulSoup
 
 
@@ -13,6 +15,7 @@ class NBAcard:
         self.keywords = keywords
 
     def _get_card_price(self, start_year, end_year, keywords):
+        Your_Cookie = "_gcl_au=1.1.2007110162.1618220012; _gid=GA1.2.292852106.1618220012; _fbp=fb.1.1618220012742.998460864; _hjid=b771801c-06a4-4243-9676-dacb4e3df3ec; _hjIncludedInSessionSample=0; _hjTLDTest=1; _hjAbsoluteSessionInProgress=0; remember_web_3dc7a913ef5fd4b890ecabe3487085573e16cf82=eyJpdiI6InNnOE1LdkMxUGZjNU9IZHg4cFJMaGc9PSIsInZhbHVlIjoiRDRQQTVXSmlNNjcrV21RVFVpa2U3WTJEY0hkVUVOU21wWUdCVmNFQjllcWp5WnA1VmRmbDJaVUF2SUFLS3R5MGdqMHc2OGFwR1ZZYjJSMjRRdTdlMnByejZ4TnVaNWd5aExmNzFuZGRPM3VyN1RHUGZQUmZnY3p4SEE5WEd2SGhlU2pXNjVTajlwSVUwdkc2d1pzSzk0WUV2SGxQTFNTMmkyMksvREVYb2NiSkorMXlqbVk1SHk3V1VRMm43d2piUWFtQWZKT0lqMnBaV2dqejJISXFOQmJUK0poQ0NKdmF1N3Y5WDlDeTEzYz0iLCJtYWMiOiI0NDJlMTNmZWZmNDdlOWZhODIxZGNiMDAxOWMxN2Q0ODYyYjJmMGU3ODg5MDE1YzNmMmRkZTQwNGMxODQ1NmNlIn0%3D; XSRF-TOKEN=eyJpdiI6IlN2V0NlajJscS9JOURIMDNITGpYL0E9PSIsInZhbHVlIjoielFUZjl0Qk0rRzJLKzIwYzF5MFByN3BLeFZTTWx6K2JPcjRxMDR3NjcvVWUvSml6VWcwV2Z3OHdhUDBRNnhuTkUzajU0Tko4S2tBMHhLRXdodW5vSmFacW1LMTBhem1YV0RQS1krNm1JMmxCRjB3dDFlY1A0a2o2cFZ1SHZQZkMiLCJtYWMiOiJmOTgwNjIwNDRlZjg1MTE1MTQzZmRjZjczMDBmOGRkNzAyNmNkODM5MjQ5OGVkMTZmNGI5NzEzYmY2ZGEzODNhIn0%3D; pwcc_marketplace_session=eyJpdiI6IldPQ3F6UjVHcVBWbi9rczBCaStLZ1E9PSIsInZhbHVlIjoiOWZVdDdnZ1hyNDJwdlpHc1hqUFZ2K0tLMmhpSVAvZ0ZGRjVLdzgybE1ZRlpkZDRqVmRYOEtvVXEzam42VkMxVm50dHFLQUcycGpRY081Mmx6RW5YKzBJSHBlMTVuUGJEZ2dYcUx6K1FqeWpIdFkvUjhBVVFwd0szNmZSZFV5d1IiLCJtYWMiOiI0ZGNhNmNjNmI4ZTY4YTZjOGIxZmNkYjExNTg3MDVlNTdhNmIyZTFmMDdiYjM4ZjQxMTBiMmZjMTI4NzQ4ODJmIn0%3D; _ga_DG9E55C3MN=GS1.1.1618287064.2.1.1618287116.0; _ga=GA1.2.2038295345.1618220012"
         headers = {"Cookie": Your_Cookie}
         keywords = keywords.replace(" ", "+")
         all_year_card_price = {}
@@ -131,9 +134,29 @@ class NBAcard:
         df.to_csv("card_price.csv", index=False)
         return df
 
+    def draw(self, df):
+        plt.style.use("fivethirtyeight")
+        champ_icon = {True:"✪", False:" "}
+        df["champion"] = df["champion"].apply(lambda x:champ_icon[x])
+        df["player_info"] = df["Season"]+"/"+df["Tm"]+df["champion"]
+        fig = df.plot(x="player_info", 
+                y="card_price", 
+                color="skyblue", 
+                kind="line",
+                figsize=(28.5, 20.5),
+                xticks=range(0, len(df["Season"])),
+                rot=-80).get_figure()
+        fig.savefig("card_price.png")
+        fig = df[["player_info", "PTS", "fantasy_p"]].plot.bar(
+            x="player_info", 
+            figsize=(28.5, 20.5),
+            rot = "290").get_figure()
+        fig.savefig("player_info.png")
+        return "DONE"
 
 if __name__ == "__main__":
     nbacard = NBAcard(
         "LeBron James", 2003, 2021, "lebron rc topps chrome refractor psa"
     )
-    print(nbacard.make_player_df())
+    df = nbacard.make_player_df()
+    nbacard.draw(df)
